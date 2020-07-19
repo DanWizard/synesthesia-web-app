@@ -9,24 +9,30 @@ export const DashBoardContainer = styled.div`
   flex-direction: column;
 `;
 
-export const Portrait = styled.div`
-  width: 600px;
-  height: 600px;
-  background-color: rgba(
-    ${({ rgb }) => {
-      //   console.log("r: ", rgb[0]);
-      return rgb[0];
-    }},
-    ${({ rgb }) => {
-      console.log("g: ", rgb[1]);
-      return rgb[1];
-    }},
-    ${({ rgb }) => {
-      //   console.log("b: ", rgb[2]);
-      return rgb[2];
-    }},
-    1
-  );
+// const colors = {
+//   // black:
+// }
 
-  //   transition: background-color 0.001s;
+const colorPicker = (obj) => {
+  let str = "";
+  Object.entries(obj).forEach(([key, value]) => {
+    if (parseInt(key) === Object.entries(obj).length - 1) {
+      str = `rgba(0,0,${value}) ` + str;
+    } else {
+      str += `, rgba(0,0,${value})`;
+    }
+  });
+  return str;
+};
+
+export const Portrait = styled.div`
+  width: 800px;
+  height: 800px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    ${({ fObj }) => {
+      return fObj ? colorPicker(fObj) : "black, black";
+    }}
+  );
 `;

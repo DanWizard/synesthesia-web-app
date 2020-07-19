@@ -1,30 +1,39 @@
 import React, { useEffect, useState } from "react";
 import { DashBoardContainer, Portrait } from "./styles";
 import { Pt, Sound } from "pts";
+import { hertz } from "./notes";
+
+// WHEN FREQ BINS ARE A GIVEN
+// **
+// time = (desired max hertz) * 2
+// max hertz = (desired time) / 2
+// rate = 1 / time
+// **
 
 const Home = () => {
   const [start, setStart] = useState(null);
   const [clicked, setC] = useState(null);
-  const [color, setCo] = useState(0);
-  const [rgb, setRGB] = useState(null);
+  const [freq, setFreq] = useState(null);
   const [timeFunc, setFunc] = useState(null);
+  const freqBinLen = 256;
+  const time = hertz["B8"] * 2;
+  const rate = (1 / time) * 1000;
+  const radialGCC = 12;
+
+  // console.log(rate);
+  // console.log(time);
+  // console.log(hertz["B8"]);
 
   const clickButton = () => {
     if (timeFunc) {
-      //   console.log("stopped");
       stop();
     }
     setC(true);
   };
 
   const listen = async () => {
-    const so = Sound;
-    console.log(Pt);
-    console.log(Sound);
     const s = await Sound.input();
-    console.log(s);
-    const activeSound = s.analyze(128);
-    console.log(activeSound);
+    const activeSound = s.analyze(freqBinLen);
     setStart(activeSound);
     change();
   };
@@ -37,7 +46,7 @@ const Home = () => {
         change();
       }
     }
-  }, [start, color, clicked]);
+  }, [start, clicked]);
 
   const getMean = (arr) => {
     let sum = 0;
@@ -47,51 +56,19 @@ const Home = () => {
     return sum / arr.length;
   };
 
-  const pChange = (o, n) => {
-    const dif = Math.abs(o - n);
-    return (dif / o) * 100;
+  const getMax = (arr) => {
+    return Math.max(...arr);
   };
 
   const change = () => {
     if (!timeFunc) {
-      console.log("entered");
-      let green = g();
-      let blue = b();
-      let mean = 0;
-      let set = [mean];
-      let percentChange;
       const func = setInterval(() => {
         if (start) {
           const f = filterFreq();
-          set.push(f);
-          mean = getMean(set);
-          percentChange = pChange(mean, f);
-          //   console.log("mean:", mean);
-          console.log("change:", percentChange);
-          if (green < 255 && blue < 55) {
-            let increase = f / 1000;
-
-            if (percentChange > 400) {
-              increase = f * 0.1;
-            }
-            green += increase;
-          }
-          if (green >= 255 && blue < 255) {
-            blue += f / 1000;
-          }
-          if (blue >= 254 && green > 0) {
-            green -= f / 1000;
-          }
-          if (green <= 1 && blue >= 1) {
-            blue -= f / 1000;
-          }
-          setRGB({
-            0: f,
-            1: green,
-            2: blue,
-          });
+          // console.log(f);
+          setFreq(f);
         }
-      }, 0.001);
+      }, rate);
       setFunc(func);
     }
   };
@@ -103,24 +80,43 @@ const Home = () => {
   const filterFreq = () => {
     if (start) {
       let arr = start.freqDomain();
-      //   arr = arr.slice(0, 9);
-      return arr[10];
+      // arr = arr.slice(0, 250);
+      let iter = 0;
+      let count = 0;
+      const fSet = Math.floor(arr.length / radialGCC);
+      const remainder = arr.length % radialGCC;
+      let testFobj = {};
+      const fObj = {};
+      console.log(arr);
+      do {
+        let add = 0;
+        if (iter === 0) {
+          add = remainder;
+        }
+        testFobj[iter] = arr.slice(count, count + fSet + add);
+        fObj[iter] = getMax(arr.slice(count, count + fSet + add));
+        count = count + fSet + add;
+        iter += 1;
+      } while (iter < radialGCC);
+      console.log(testFobj);
+      // console.log(fObj);
+      return fObj;
     } else {
       return 0;
     }
   };
 
-  const g = () => {
-    return rgb ? (rgb[1] > 254 ? 0 : rgb[1] + 1) : 50;
-  };
+  // const g = () => {
+  //   return rgb ? (rgb[1] > 254 ? 0 : rgb[1] + 1) : 50;
+  // };
 
-  const b = () => {
-    return rgb ? (rgb[2] > 254 ? 0 : rgb[2] + 1) : 50;
-  };
+  // const b = () => {
+  //   return rgb ? (rgb[2] > 254 ? 0 : rgb[2] + 1) : 50;
+  // };
 
   return (
     <DashBoardContainer>
-      <Portrait onClick={clickButton} rgb={rgb || [0, 50, 50]}></Portrait>
+      <Portrait onClick={clickButton} fObj={freq}></Portrait>
     </DashBoardContainer>
   );
 };
