@@ -5,7 +5,7 @@ import { hertz } from "./notes";
 
 // WHEN FREQ BINS ARE A GIVEN
 // **
-// time = (desired max hertz) * 2
+// time = 1/((desired max hertz) * 2)
 // max hertz = (desired time) / 2
 // rate = 1 / time
 // **
@@ -16,8 +16,8 @@ const Home = () => {
   const [freq, setFreq] = useState(null);
   const [timeFunc, setFunc] = useState(null);
   const freqBinLen = 256;
-  const time = hertz["B8"] * 2;
-  const rate = (1 / time) * 1000;
+  const f_sample = hertz["B8"] * 2;
+  const period = (1 / f_sample) * 1000;
   const radialGCC = 12;
 
   // console.log(rate);
@@ -32,6 +32,9 @@ const Home = () => {
   };
 
   const listen = async () => {
+    // const si = Sound
+    // const sp = await si.input()
+    debugger
     const s = await Sound.input();
     const activeSound = s.analyze(freqBinLen);
     setStart(activeSound);
@@ -68,7 +71,7 @@ const Home = () => {
           // console.log(f);
           setFreq(f);
         }
-      }, rate);
+      }, period);
       setFunc(func);
     }
   };
