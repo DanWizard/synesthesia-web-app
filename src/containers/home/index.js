@@ -32,8 +32,8 @@ const Home = () => {
   };
 
   const listen = async () => {
-    // const si = Sound
-    // const sp = await si.input()
+    const si = Sound
+    const sp = await si.input()
     debugger
     const s = await Sound.input();
     const activeSound = s.analyze(freqBinLen);
@@ -59,7 +59,7 @@ const Home = () => {
     return sum / arr.length;
   };
 
-  const getMax = (arr) => {
+  const getMax = (arr) => { //need to return max magnitude AND index of frequency bin
     return Math.max(...arr);
   };
 
@@ -88,25 +88,31 @@ const Home = () => {
       let count = 0;
       const fSet = Math.floor(arr.length / radialGCC);
       const remainder = arr.length % radialGCC;
-      let testFobj = {};
-      const fObj = {};
+      const buckets = {};
       console.log(arr);
       do {
         let add = 0;
         if (iter === 0) {
           add = remainder;
         }
-        testFobj[iter] = arr.slice(count, count + fSet + add);
-        fObj[iter] = getMax(arr.slice(count, count + fSet + add));
+        buckets[iter] = getMax(arr.slice(count, count + fSet + add));
         count = count + fSet + add;
+
+        const delta = 0.5 * ((arr[IndexOfMaxY-1] - arr[IndexOfMaxY+1]) / (arr[IndexOfMaxY-1] - (2.0 * arr[IndexOfMaxY]) + arr[IndexOfMaxY+1]));
+        const interpolatedX = ((IndexOfMaxY + delta)  * f_sample) / (freqBinLen-1);
+        if(IndexOfMaxY==(Math.floor(freqBinLin/2))){ //To improve calculation on edge values
+          interpolatedX = ((IndexOfMaxY + delta)  * f_sample) / (freqBinLen);
+        }
         iter += 1;
       } while (iter < radialGCC);
       console.log(testFobj);
       // console.log(fObj);
-      return fObj;
+      return buckets;
     } else {
       return 0;
     }
+
+
   };
 
   // const g = () => {
