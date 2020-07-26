@@ -45,23 +45,23 @@ const Home = () => {
     // const si = Sound;
     // const sp = await si.input();
     // debugger;
-    // const s = await Sound.input();
-    // const activeSound = s.analyze(freqBinLen, -65);
-    const activeSound = new window.AudioContext({ sampleRate: f_sample });
-    const analyzer = activeSound.createAnalyser();
-    analyzer.minDecibals = -100;
-    analyzer.maxDecibals = -30;
-    analyzer.smoothingTimeConstant = 0.8;
-    analyzer.fftSize = 256;
-    const bufferLength = analyzer.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    console.log(analyzer.getByteFrequencyData(dataArray));
-    console.log(activeSound);
-    console.log(analyzer);
+    const s = await Sound.input();
+    const activeSound = s.analyze(freqBinLen, -65);
+    // const activeSound = new window.AudioContext({ sampleRate: f_sample });
+    // const analyzer = activeSound.createAnalyser();
+    // analyzer.minDecibals = -100;
+    // analyzer.maxDecibals = -30;
+    // analyzer.smoothingTimeConstant = 0.8;
+    // analyzer.fftSize = 256;
+    // const bufferLength = analyzer.frequencyBinCount;
+    // const dataArray = new Uint8Array(bufferLength);
+    // console.log(analyzer.getByteFrequencyData(dataArray));
+    // console.log(activeSound);
+    // console.log(analyzer);
 
-    if (activeSound) debugger;
+    // if (activeSound) debugger;
     setStart(activeSound);
-    setStartAnalyzer(analyzer);
+    // setStartAnalyzer(analyzer);
     change();
   };
 
@@ -101,10 +101,10 @@ const Home = () => {
     if (!timeFunc) {
       const func = setInterval(() => {
         console.log("does not exist");
-        debugger;
+        // debugger;
         if (start || startAnalyzer) {
           console.log("does exist");
-          debugger;
+          // debugger;
           const f = filterFreq();
           // console.log(f);
           setFreq(f);
@@ -120,10 +120,10 @@ const Home = () => {
 
   const filterFreq = () => {
     console.log("does not exist");
-    debugger;
+    // debugger;
     if (start) {
       console.log("does exist");
-      debugger;
+      // debugger;
       let arr = start.freqDomain();
       let iter = 0;
       let count = 0;
