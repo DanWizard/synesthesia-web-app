@@ -10,6 +10,10 @@ import { hertz } from "./notes";
 // rate = 1 / time
 // **
 
+let ctx = new window.AudioContext();
+let analyzer = ctx.createAnalyser();
+
+
 const Home = () => {
   const [start, setStart] = useState(null);
   const [startAnalyzer, setStartAnalyzer] = useState(null);
@@ -21,18 +25,7 @@ const Home = () => {
   const f_sample = hertz["B6"] * 2;
   const period = (1 / f_sample) * 1000;
   const radialGCC = 12;
-  // console.log(period);
-  // console.log(f_sample);
-  // console.log(f_sample);
-  // console.log(f_sample);
-  // console.log(f_sample);
-  // console.log(f_sample);
-  // console.log(f_sample);
-  // const cutOffs = []
 
-  // console.log(rate);
-  // console.log(time);
-  // console.log(hertz["B8"]);
 
   const clickButton = () => {
     if (timeFunc) {
@@ -42,25 +35,34 @@ const Home = () => {
   };
 
   const listen = async () => {
-    // const si = Sound;
-    // const sp = await si.input();
-    // debugger;
-    // const s = await Sound.input();
-    // const activeSound = s.analyze(freqBinLen, -65);
-    const activeSound = new window.AudioContext({ sampleRate: f_sample });
-    const analyzer = activeSound.createAnalyser();
+    const c = {audio: true, video: false};
+    let stream = null;
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(c);
+      /* use the stream */
+    } catch(err) {
+      /* handle the error */
+    }
+    console.log(stream);
+ 
+    let audio = ctx.createMediaStreamSource(stream);
+
+    audio.connect(analyzer);
     analyzer.minDecibals = -100;
     analyzer.maxDecibals = -30;
     analyzer.smoothingTimeConstant = 0.8;
     analyzer.fftSize = 256;
     const bufferLength = analyzer.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    console.log(analyzer.getByteFrequencyData(dataArray));
-    console.log(activeSound);
+    analyzer.getByteFrequencyData(dataArray);
+    console.log(dataArray);
+    console.log(ctx);
     console.log(analyzer);
+  
 
-    if (activeSound) debugger;
-    setStart(activeSound);
+    if (ctx) ;
+    setStart(ctx);
     setStartAnalyzer(analyzer);
     change();
   };
@@ -70,7 +72,7 @@ const Home = () => {
       if (!start) {
         listen();
       } else {
-        change();
+        change(); 
       }
     }
   }, [start, clicked, startAnalyzer, swi]);
@@ -101,10 +103,8 @@ const Home = () => {
     if (!timeFunc) {
       const func = setInterval(() => {
         console.log("does not exist");
-        debugger;
         if (start || startAnalyzer) {
           console.log("does exist");
-          debugger;
           const f = filterFreq();
           // console.log(f);
           setFreq(f);
@@ -120,11 +120,13 @@ const Home = () => {
 
   const filterFreq = () => {
     console.log("does not exist");
-    debugger;
+
     if (start) {
+      const bufferLength = analyzer.frequencyBinCount;
+      const arr = new Uint8Array(bufferLength);
+      analyzer.getByteFrequencyData(arr);
+      console.log(arr);
       console.log("does exist");
-      debugger;
-      let arr = start.freqDomain();
       let iter = 0;
       let count = 0;
       const fSet = Math.floor(arr.length / radialGCC);
@@ -142,18 +144,18 @@ const Home = () => {
         buckets[iter] = vals.max;
         count = count + fSet + add;
 
-        const delta =
-          0.5 *
-          ((arr[IndexOfMaxY - 1] - arr[IndexOfMaxY + 1]) /
-            (arr[IndexOfMaxY - 1] -
-              2.0 * arr[IndexOfMaxY] +
-              arr[IndexOfMaxY + 1]));
-        const interpolatedX =
-          ((IndexOfMaxY + delta) * f_sample) / (freqBinLen - 1);
-        if (IndexOfMaxY == Math.floor(freqBinLen / 2)) {
-          //To improve calculation on edge values
-          interpolatedX = ((IndexOfMaxY + delta) * f_sample) / freqBinLen;
-        }
+        // const delta =
+        //   0.5 *
+        //   ((arr[IndexOfMaxY - 1] - arr[IndexOfMaxY + 1]) /
+        //     (arr[IndexOfMaxY - 1] -
+        //       2.0 * arr[IndexOfMaxY] +
+        //       arr[IndexOfMaxY + 1]));
+        // const interpolatedX =
+        //   ((IndexOfMaxY + delta) * f_sample) / (freqBinLen - 1);
+        // if (IndexOfMaxY == Math.floor(freqBinLen / 2)) {
+        //   //To improve calculation on edge values
+        //   interpolatedX = ((IndexOfMaxY + delta) * f_sample) / freqBinLen;
+        // }
         iter += 1;
       } while (iter < radialGCC);
       // console.log(testFobj);
