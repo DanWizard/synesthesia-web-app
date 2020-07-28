@@ -10,21 +10,19 @@ import { hertz } from "./notes";
 // rate = 1 / time
 // **
 
-let ctx = new window.AudioContext();
-let analyzer = ctx.createAnalyser();
-
+let f_max;
+const freqBinLen = 4096;
+const radialGCC = 12;
+let bucketBounds = new Int32Array(radialGCC);
 
 const Home = () => {
   const [start, setStart] = useState(null);
-  const [startAnalyzer, setStartAnalyzer] = useState(null);
-  const [swi, setSwitch] = useState(null);
   const [clicked, setC] = useState(null);
   const [freq, setFreq] = useState(null);
   const [timeFunc, setFunc] = useState(null);
-  const freqBinLen = 256;
-  const f_sample = hertz["B6"] * 2;
-  const period = (1 / f_sample) * 1000;
-  const radialGCC = 12;
+
+  const period = .00001;
+
 
 
   const clickButton = () => {
@@ -35,36 +33,11 @@ const Home = () => {
   };
 
   const listen = async () => {
-    const c = {audio: true, video: false};
-    let stream = null;
-
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(c);
-      /* use the stream */
-    } catch(err) {
-      /* handle the error */
-    }
-    console.log(stream);
- 
-    let audio = ctx.createMediaStreamSource(stream);
-
-    audio.connect(analyzer);
-    analyzer.minDecibals = -100;
-    analyzer.maxDecibals = -30;
-    analyzer.smoothingTimeConstant = 0.8;
-    analyzer.fftSize = 256;
-    const bufferLength = analyzer.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    analyzer.getByteFrequencyData(dataArray);
-    console.log(dataArray);
-    console.log(ctx);
-    console.log(analyzer);
-    console.log("test");
-  
-
-    if (ctx) ;
-    setStart(ctx);
-    setStartAnalyzer(analyzer);
+    const s = await Sound.input();
+    const activeSound = s.analyze(freqBinLen);
+    f_max = activeSound._ctx.sampleRate/2;
+    setBounds();
+    setStart(activeSound);
     change();
   };
 
@@ -76,7 +49,7 @@ const Home = () => {
         change(); 
       }
     }
-  }, [start, clicked, startAnalyzer, swi]);
+  }, [start, clicked]);
 
   const getMean = (arr) => {
     let sum = 0;
@@ -87,10 +60,8 @@ const Home = () => {
   };
 
   const getMax = (arr) => {
-    //need to return max magnitude AND index of frequency bin
     let max = 0;
     let index = null;
-    // [1,2,3,4]
     arr.forEach((element, i) => {
       if (element > max) {
         max = element;
@@ -103,10 +74,8 @@ const Home = () => {
   const change = () => {
     if (!timeFunc) {
       const func = setInterval(() => {
-        console.log("does not exist");
-        if (start || startAnalyzer) {
-          console.log("does exist");
-          const f = filterFreq();
+        if (start) {
+          const f = fillBuckets();
           // console.log(f);
           setFreq(f);
         }
@@ -119,31 +88,39 @@ const Home = () => {
     clearInterval(timeFunc);
   };
 
-  const filterFreq = () => {
-    console.log("does not exist");
+  const setBounds = () => {
+    const f_min = 16
+    const delta = f_max/freqBinLen;
+
+    const minf_log = Math.log(f_min);
+    const maxf_log = Math.log(f_max);
+    const delta_log = (maxf_log - minf_log)/radialGCC;
+
+    bucketBounds[0] = 0;
+
+    for(let i = 0; i < radialGCC;i++){
+      const idealBound = Math.exp((delta_log * (i+1)) + minf_log);
+      console.log(idealBound);
+      const actualBound = Math.floor(idealBound/delta);
+      bucketBounds[i+1] = actualBound;
+
+    }
+
+  }
+
+  const fillBuckets = () => {
 
     if (start) {
-      const bufferLength = analyzer.frequencyBinCount;
-      const arr = new Uint8Array(bufferLength);
-      analyzer.getByteFrequencyData(arr);
-      console.log(arr);
-      console.log("does exist");
-      let iter = 0;
-      let count = 0;
-      const fSet = Math.floor(arr.length / radialGCC);
-      const remainder = arr.length % radialGCC;
+      let arr = start.freqDomain();
+      let i = 0;
+
       const buckets = {};
       console.log(arr);
-      do {
-        let add = 0;
-        if (iter === 0) {
-          add = remainder;
-        }
-
-        const vals = getMax(arr.slice(count, count + fSet + add));
+      while(i < radialGCC){
+        const vals = getMax(arr.slice(bucketBounds[i], bucketBounds[i+1]-1));
         const IndexOfMaxY = vals.index;
-        buckets[iter] = vals.max;
-        count = count + fSet + add;
+        buckets[i] = vals.max;
+        console.log(vals);
 
         // const delta =
         //   0.5 *
@@ -157,10 +134,9 @@ const Home = () => {
         //   //To improve calculation on edge values
         //   interpolatedX = ((IndexOfMaxY + delta) * f_sample) / freqBinLen;
         // }
-        iter += 1;
-      } while (iter < radialGCC);
-      // console.log(testFobj);
-      // console.log(fObj);
+        i += 1;
+      }
+
       return buckets;
     } else {
       return 0;
