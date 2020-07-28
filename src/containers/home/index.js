@@ -59,6 +59,7 @@ const Home = () => {
     console.log(dataArray);
     console.log(ctx);
     console.log(analyzer);
+    console.log("test");
   
 
     if (ctx) ;
